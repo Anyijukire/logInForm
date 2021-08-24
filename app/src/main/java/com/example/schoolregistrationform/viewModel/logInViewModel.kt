@@ -11,23 +11,27 @@ import com.example.schoolregistrationform.models.LogInResponse
 import com.example.schoolregistrationform.repository.UserRepository
 import kotlinx.coroutines.launch
 
-class UserViewModel:ViewModel() {
+class logInViewModel:ViewModel() {
     var userRepository=UserRepository()
-    var regResponseLiveData = MutableLiveData<RegistrationResponse>()
-    var regErrorLiveData = MutableLiveData<String>()
+
+    var logResponseLiveData = MutableLiveData<LogInResponse>()
+    var logErrorLiveData = MutableLiveData<String>()
 
 
-
-    fun registerStudent(registrationRequest: RegistrationRequest){
-    viewModelScope.launch {
-        val response = userRepository.registerUser(registrationRequest)
-        if (response.isSuccessful){
-            regResponseLiveData.postValue(response.body())
+    fun logInStudent(logInRequest: LogInRequest){
+        viewModelScope.launch {
+            val resp = userRepository.logInuser(logInRequest)
+            if (resp.isSuccessful){
+                logResponseLiveData.postValue(resp.body())
+            }
+            else{
+                logErrorLiveData.postValue(resp.errorBody()?.string())
+            }
         }
-        else{
-            regErrorLiveData.postValue(response.errorBody()?.string())
-        }
+
     }
-    }
+
+
+
 
 }

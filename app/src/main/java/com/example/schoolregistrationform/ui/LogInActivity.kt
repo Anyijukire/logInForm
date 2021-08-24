@@ -1,20 +1,26 @@
 package com.example.schoolregistrationform.ui
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
+import com.example.schoolregistrationform.Constants
 import com.example.schoolregistrationform.R
 import com.example.schoolregistrationform.databinding.ActivityLogInBinding
 import com.example.schoolregistrationform.models.LogInRequest
 import com.example.schoolregistrationform.viewModel.UserViewModel
+import com.example.schoolregistrationform.viewModel.logInViewModel
 
 
 class LogInActivity : AppCompatActivity() {
 
     lateinit var bindin: ActivityLogInBinding
-    val userViewModel: UserViewModel by viewModels()
+    lateinit var sharedPrefs:SharedPreferences
+    val logViewModel: logInViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,7 +29,11 @@ class LogInActivity : AppCompatActivity() {
         setContentView(bindin.root)
 
 
+        sharedPrefs=getSharedPreferences(Constants.PREFS_FILE, Context.MODE_PRIVATE)
+
         bindin.button.setOnClickListener {
+            bindin.progressBar2.visibility= View.VISIBLE
+
             val email = bindin.emaill.text.toString()
             if (email.isEmpty()) {
                 bindin.emaill.setError("enter name")
@@ -36,22 +46,31 @@ class LogInActivity : AppCompatActivity() {
                 LogInRequest(
                     email = email, password = pass
                 )
-            val intent = Intent(baseContext, CoursesActivity::class.java)
-            startActivity(intent)
+            logViewModel.logInStudent(logRequest)
 
-            userViewModel.logInStudent(logRequest)
+
         }
     }
+    //george.odenyo@actuatedigital.co.ke
 
     override fun onResume() {
         super.onResume()
-        userViewModel.logResponseLiveData.observe(this, { logResponse ->
-            if (!logResponse.studentId.isNullOrEmpty()) {
-                Toast.makeText(baseContext, "Log in successful", Toast.LENGTH_LONG).show()
-            }
+        logViewModel.logResponseLiveData.observe(this, { logResponse ->
+//            if (!logResponse.student_id.isNullOrEmpty()) {
+            bindin.progressBar2.visibility= View.GONE
+            var editor=sharedPrefs.edit()
+            editor.putString(Constants.ACCESS_TOKEN, logResponse.access_token)
+            editor.putString(Constants.STUDENT_ID, logResponse.student_id)
+            editor.apply()
+            Toast.makeText(baseContext, logResponse.message, Toast.LENGTH_LONG).show()
+            val intent = Intent(baseContext, CoursesActivity::class.java)
+            startActivity(intent)
+
+//            }
         })
-        userViewModel.logErrorLiveData.observe(this, { error ->
-            Toast.makeText(baseContext, "error", Toast.LENGTH_SHORT).show()
+        logViewModel.logErrorLiveData.observe(this, { error ->
+            bindin.progressBar2.visibility= View.GONE
+            Toast.makeText(baseContext, error, Toast.LENGTH_SHORT).show()
         })
 
     }
